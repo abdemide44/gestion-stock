@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Historique | Lab Stock{% endblock %}
+{% block page_title %}Historique{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <h3>Traçabilité complète</h3>
+    <span class="hint">❌ Pas de suppression, ✔️ suivi permanent</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0">
+      <thead>
+        <tr><th>Date</th><th>Action</th><th>Produit</th><th>Lot</th><th>Quantité</th><th>Utilisateur</th></tr>
+      </thead>
+      <tbody>
+        {% for m in mouvements %}
+        <tr>
+          <td>{{ m.date_mouvement|date:"Y-m-d H:i" }}</td>
+          <td>{{ m.get_type_mouvement_display }}</td>
+          <td>{{ m.produit.nom }}</td>
+          <td>{{ m.lot.numero_lot }}</td>
+          <td>{% if m.type_mouvement == 'entree' %}+{% else %}-{% endif %}{{ m.quantite }}</td>
+          <td>{% if m.utilisateur %}{{ m.utilisateur.username }}{% else %}Système{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">Aucun mouvement enregistré.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

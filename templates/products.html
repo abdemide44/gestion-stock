@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Produits | Lab Stock{% endblock %}
+{% block page_title %}Produits{% endblock %}
+
+{% block content %}
+<div class="panel mb-3">
+  <div class="panel-header">
+    <h3>Gestion des produits</h3>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'products' %}">⟳ Refresh</a>
+  </div>
+
+  <form method="post" class="row g-2 mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_product">
+    <div class="col-12 col-md-2">
+      <label class="form-label">Nom du produit</label>
+      {{ form.nom }}
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Référence</label>
+      {{ form.reference }}
+    </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Famille</label>
+            {{ form.famille }}
+              </div>
+    <div class="col-12 col-md-2">
+      <label class="form-label">Code-barres</label>
+      {{ form.barcode }}
+    </div>
+    <div class="col-6 col-md-1">
+      <label class="form-label">min-qte</label>
+      {{ form.nbr_qnt_alert }}
+    </div>
+    <div class="col-6 col-md-1">
+      <label class="form-label">min-jour</label>
+      {{ form.nbr_days_alert }}
+    </div>
+
+    <div class="col-12 col-md-1 d-grid align-items-end">
+      <button class="btn btn-sm btn-primary" type="submit">➕ Ajouter</button>
+    </div>
+    {% if form.errors %}
+    <div class="col-12 text-danger small">{{ form.errors }}</div>
+    {% endif %}
+  </form>
+
+  <div class="row g-2 mb-2">
+    <div class="col-12 col-md-4">
+      <input type="search" class="form-control" placeholder="Recherche par nom / barcode" data-search="products-table">
+    </div>
+    <div class="col-6 col-md-4">
+      <form method="get" class="d-flex gap-2">
+        <select name="famille" class="form-select">
+          <option value="">Filtre par famille</option>
+          {% for f in familles %}
+          <option value="{{ f.id }}" {% if selected_famille_id == f.id|stringformat:"s" %}selected{% endif %}>{{ f.nom }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-outline-secondary" type="submit">OK</button>
+      </form>
+    </div>
+    <div class="col-6 col-md-4">
+      <select class="form-select" data-sort="products-table">
+        <option value="">Tri (nom, quantité totale)</option>
+        <option value="name">Nom</option>
+        <option value="qty">Quantité totale</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-modern align-middle" id="products-table">
+      <thead>
+        <tr>
+          <th data-col="name">Nom</th>
+          <th>Référence</th>
+          <th>Famille</th>
+          <th>Code-barres</th>
+          <th data-col="qty" style="text-align:center;">Quantité totale</th>
+          <th style="text-align:center;">Seuil</th>
+          <th style="text-align:center;">Jours</th>
+                    <th style="text-align:center;">Alter Quantit</th>
+
+          <th style="text-align:center;">Alter Jours</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+     {% for item in products %}
+<tr>
+  <td>
+  <span class="truncate" title="{{ item.nom }}">
+    {{ item.nom }}
+  </span>
+</td>
+
+<td>
+  <span class="truncate" title="{{ item.reference }}">
+    {{ item.reference }}
+  </span>
+</td>
+
+<td>
+  <span class="truncate" title="{{ item.famille.nom }}">
+    {{ item.famille.nom }}
+  </span>
+</td>
+
+<td>
+  <span class="truncate" title="{{ item.barcode }}">
+    {{ item.barcode }}
+  </span>
+</td>
+
+  <td style="text-align:center;">{{ item.stock_total }}</td>
+  <td style="text-align:center;">{{ item.nbr_qnt_alert }}</td>
+  <td style="text-align:center;">{{ item.nbr_days_alert }}</td>
+
+  <!-- Stock status -->
+  <td style="text-align:center;">
+    {% if item.stock_level == 'danger' %}
+      <a href="{% url 'alerts' %}?kind=stock&q={{ item.barcode|urlencode }}" class="status-pill danger text-decoration-none">{{ item.stock_label }}</a>
+    {% elif item.stock_level == 'near' %}
+      <a href="{% url 'alerts' %}?kind=stock&q={{ item.barcode|urlencode }}" class="status-pill near text-decoration-none">{{ item.stock_label }}</a>
+    {% else %}
+      <a href="{% url 'alerts' %}?kind=stock&q={{ item.barcode|urlencode }}" class="status-pill ok text-decoration-none">{{ item.stock_label }}</a>
+    {% endif %}
+  </td>
+
+  <!-- Expiration status -->
+  <td style="text-align:center;" >
+    {% if item.exp_level == 'danger' %}
+      <a href="{% url 'alerts' %}?kind=expiry&q={{ item.barcode|urlencode }}" class="status-pill danger text-decoration-none">{{ item.exp_label }}</a>
+    {% elif item.exp_level == 'near' %}
+      <a href="{% url 'alerts' %}?kind=expiry&q={{ item.barcode|urlencode }}" class="status-pill near text-decoration-none">{{ item.exp_label }}</a>
+    {% else %}
+      <a href="{% url 'alerts' %}?kind=expiry&q={{ item.barcode|urlencode }}" class="status-pill ok text-decoration-none">{{ item.exp_label }}</a>
+    {% endif %}
+  </td>
+
+  <!-- Actions -->
+  <td>
+    <div class="d-flex gap-1 flex-wrap">
+
+      <a href="{% url 'product_edit' item.id %}" class="btn btn-sm btn-outline-primary">
+        Modifier
+      </a>
+
+      <form method="post"
+            action=""
+            onsubmit="return confirm('Supprimer / archiver ce produit ?');">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete_product">
+        <input type="hidden" name="product_id" value="{{ item.id }}">
+        <button class="btn btn-sm btn-outline-danger" type="submit">
+          Supprimer
+        </button>
+      </form>
+
+      <a href="{% url 'lots' %}?product={{ item.id }}"
+         class="btn btn-sm btn-outline-success">
+        Ajouter lot
+      </a>
+
+    </div>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="9" class="text-center text-muted">
+    Aucun produit.
+  </td>
+</tr>
+{% endfor %}
+
+
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

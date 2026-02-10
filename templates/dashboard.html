@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord | Lab Stock{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'alerts' %}" class="text-decoration-none text-reset d-block">
+      <article class="kpi-card info">
+        <p class="kpi-label">Alertes actives</p>
+        <h2 class="kpi-value">{{ total_alerts }}</h2>
+      </article>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'alerts' %}?kind=stock" class="text-decoration-none text-reset d-block">
+      <article class="kpi-card warning">
+        <p class="kpi-label">Alertes stock</p>
+        <h2 class="kpi-value">{{ stock_alert_count }}</h2>
+      </article>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'alerts' %}?kind=expiry" class="text-decoration-none text-reset d-block">
+      <article class="kpi-card warning">
+        <p class="kpi-label">Alertes expiration</p>
+        <h2 class="kpi-value">{{ expiry_alert_count }}</h2>
+      </article>
+    </a>
+  </div>
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a href="{% url 'products' %}" class="text-decoration-none text-reset d-block">
+      <article class="kpi-card danger">
+        <p class="kpi-label">Produits critiques</p>
+        <h2 class="kpi-value">{{ critical_products_count }}</h2>
+      </article>
+    </a>
+  </div>
+</div>
+
+<div class="panel dashboard-shortcuts-panel">
+  <div class="panel-header">
+    <h3>Raccourcis rapides</h3>
+    <span class="hint">Navigation générale du système</span>
+  </div>
+  <div class="shortcut-grid">
+    <a class="shortcut-card alerts" href="{% url 'alerts' %}">
+      <span class="shortcut-icon">⚠️</span>
+      <span class="shortcut-title">Alertes</span>
+      <span class="shortcut-sub">Toutes les alertes</span>
+    </a>
+    <a class="shortcut-card products" href="{% url 'products' %}">
+      <span class="shortcut-icon">🧪</span>
+      <span class="shortcut-title">Produits</span>
+      <span class="shortcut-sub">Liste et seuils</span>
+    </a>
+    <a class="shortcut-card lots" href="{% url 'lots' %}">
+      <span class="shortcut-icon">🧬</span>
+      <span class="shortcut-title">Lots</span>
+      <span class="shortcut-sub">Entrées et péremption</span>
+    </a>
+    <a class="shortcut-card movements" href="{% url 'movements' %}">
+      <span class="shortcut-icon">🔄</span>
+      <span class="shortcut-title">Sorties</span>
+      <span class="shortcut-sub">Consommation FEFO</span>
+    </a>
+    <a class="shortcut-card family" href="{% url 'famille' %}">
+      <span class="shortcut-icon">🧩</span>
+      <span class="shortcut-title">Familles</span>
+      <span class="shortcut-sub">Classification produits</span>
+    </a>
+    <a class="shortcut-card history" href="{% url 'historique' %}">
+      <span class="shortcut-icon">🗂️</span>
+      <span class="shortcut-title">Historique</span>
+      <span class="shortcut-sub">Journal des actions</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Sortie / Consommation | Lab Stock{% endblock %}
+{% block page_title %}Sortie / Consommation{% endblock %}
+
+{% block content %}
+
+<div class="row g-3 mb-3">
+  <div class="col-12 col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h3>Sortie / Consommation (FEFO)</h3>
+      </div>
+
+      <form method="post" class="row g-2 mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="consume">
+
+        <div class="col-12">
+          <label class="form-label">
+            Reference ou code-barres (auto-focus)
+          </label>
+          {{ form.code }}
+        </div>
+
+        <div class="col-6">
+          <label class="form-label">
+            Quantité (par défaut = 1)
+          </label>
+          {{ form.quantite }}
+        </div>
+
+        <div class="col-6 d-grid align-items-end">
+          <button id="consume-btn"
+                  type="submit"
+                  class="btn btn-outline-danger">
+            🔻 Consommer
+          </button>
+        </div>
+
+        {% if form.errors %}
+        <div class="col-12 text-danger small">
+          {{ form.errors }}
+        </div>
+        {% endif %}
+      </form>
+
+      <!-- Preview FEFO -->
+      <div class="preview-box">
+        <p class="mb-1">
+          <strong>Produit :</strong>
+          <span id="preview-product">-</span>
+        </p>
+        <p class="mb-1">
+          <strong>Date d'entree (FEFO) :</strong>
+          <span id="preview-entry">-</span>
+        </p>
+        <p class="mb-0">
+          <strong>Date de péremption :</strong>
+          <span id="preview-exp">-</span>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h3>Lots disponibles pour consommation (FEFO)</h3>
+  </div>
+
+  <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+    <table class="table table-modern mb-0" id="fefo-table">
+      <thead>
+        <tr>
+          <th>Code-barres</th>
+          <th>Produit</th>
+          <th>Date d'entree</th>
+          <th>Date péremption</th>
+          <th>Quantité</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lot in fefo_lots %}
+        <tr
+          data-barcode="{{ lot.produit.barcode }}"
+          data-reference="{{ lot.produit.reference }}"
+          data-product="{{ lot.produit.nom }}"
+          data-entry="{{ lot.date_entree }}"
+          data-exp="{{ lot.date_fin }}"
+          data-qty="{{ lot.quantite }}"
+        >
+          <td>{{ lot.produit.barcode }}</td>
+          <td>{{ lot.produit.nom }}</td>
+          <td>{{ lot.date_entree }}</td>
+          <td>{{ lot.date_fin }}</td>
+          <td>{{ lot.quantite }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">
+            Aucun lot disponible.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel mt-3">
+  <div class="panel-header">
+    <h3>Historique des sorties</h3>
+    <button type="button" class="btn btn-sm btn-outline-secondary">Clear historique</button>
+  </div>
+
+  <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+    <table class="table table-modern mb-0">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Reference</th>
+          <th>Code-barres</th>
+          <th>Quantite sortie</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in sort_history %}
+        <tr>
+          <td>{{ item.produit.nom|default:"-" }}</td>
+          <td>{{ item.produit.reference }}</td>
+          <td>{{ item.produit.barcode }}</td>
+          <td>{{ item.quantite }}</td>
+          <td>{{ item.date_sortie }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">
+            Aucune sortie enregistree.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

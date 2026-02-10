@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Lots / Péremption | Lab Stock{% endblock %}
+{% block page_title %}Lots / Dates de péremption{% endblock %}
+
+{% block content %}
+<div class="panel mb-3">
+  <div class="panel-header">
+    <h3>Ajouter un lot</h3>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'lots' %}">⟳ Refresh</a>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Recherche produit</label>
+      <input id="product-lookup" class="form-control" list="product-lookup-list" placeholder="Ex: 1200088112 ou EDTA-05">
+
+      <datalist id="product-lookup-list">
+        {% for p in product_lookup_map %}
+        <option value="{{ p.barcode }}">{{ p.nom|default:"-" }} - {{ p.reference }}</option>
+        <option value="{{ p.reference }}">{{ p.nom|default:"-" }} - {{ p.barcode }}</option>
+        {% endfor %}
+      </datalist>
+    </div>
+    <div class="col-12 col-md-2 d-grid align-items-end">
+      <button id="product-lookup-btn" type="button" class="btn btn-outline-primary">Choisir produit</button>
+    </div>
+    <div class="col-12 col-md-6 d-flex align-items-end">
+      <span class="hint">Scan du code-barres ou saisie de la référence.</span>
+    </div>
+  </div>
+
+<form method="post" class="row g-2 mb-3 align-items-end">
+  {% csrf_token %}
+
+  <!-- Produit -->
+  <div class="col-12 col-md-3">
+    <label class="form-label">Produit</label>
+    {{ form.produit }}
+  </div>
+
+  <!-- Date d'entrée -->
+  <div class="col-12 col-md-2">
+    <label class="form-label">Date entrée</label>
+    {{ form.date_entree }}
+  </div>
+
+  <!-- Date de péremption -->
+  <div class="col-12 col-md-2">
+    <label class="form-label">Date péremption</label>
+    {{ form.date_fin }}
+  </div>
+
+  <!-- Quantité -->
+  <div class="col-12 col-md-2">
+    <label class="form-label">Quantité</label>
+    {{ form.quantite }}
+  </div>
+
+  <!-- Submit -->
+  <div class="col-12 col-md-1 d-grid">
+    <button class="btn btn-primary" type="submit">
+      Ajouter
+    </button>
+  </div>
+
+  <!-- Errors -->
+  {% if form.errors %}
+  <div class="col-12 text-danger small">
+    {{ form.errors }}
+  </div>
+  {% endif %}
+</form>
+
+<!-- JS data (lookup produit / barcode / etc.) -->
+{{ product_lookup_map|json_script:"product-map-data" }}
+
+</div>
+
+<div class="panel mb-3">
+  <div class="panel-header">
+    <h3>Lots par produit (FEFO)</h3>
+    <span class="hint">Le lot le plus proche de la date d'expiration est affiché en premier.</span>
+  </div>
+
+  <div class="row g-2 mb-2">
+    <div class="col-12 col-md-6">
+      <input
+        type="search"
+        class="form-control"
+        placeholder="Filtrer par produit, date ou quantité"
+        data-search="lots-table">
+    </div>
+    <div class="col-12 col-md-3">
+      <select id="lots-alert-filter" class="form-select" data-alert-filter="lots-table">
+        <option value="">Filtrer Alter Jours (tous)</option>
+        <option value="danger">🔴 Rouge</option>
+        <option value="near">🟡 Jaune</option>
+        <option value="ok">🟢 Vert</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-modern align-middle mb-0" id="lots-table">
+      <thead>
+        <tr>
+          <th>Produit</th><th>Date d'entrée</th><th>Date de péremption</th><th>Quantité restante</th><th>Alter Jours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in lots %}
+        <tr data-alert-level="{{ item.level }}">
+          <td>{{ item.produit.reference }}</td>
+
+          <td>{{ item.date_entree }}</td>
+          <td>{{ item.date_fin }}</td>
+          <td>{{ item.quantite }}</td>
+          <td>
+            {% if item.level == 'danger' %}
+            <a href="{% url 'alerts' %}?kind=expiry&q={{ item.produit.barcode|urlencode }}" class="status-pill danger text-decoration-none">🔴 {{ item.label }}</a>
+            {% elif item.level == 'near' %}
+            <a href="{% url 'alerts' %}?kind=expiry&q={{ item.produit.nom|default:item.produit.barcode|urlencode }}" class="status-pill near text-decoration-none">🟠 {{ item.label }}</a>
+            {% else %}
+            <a href="{% url 'alerts' %}?kind=expiry&q={{ item.produit.nom|default:item.produit.barcode|urlencode }}" class="status-pill ok text-decoration-none">🟢 {{ item.label }}</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted">Aucun lot.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

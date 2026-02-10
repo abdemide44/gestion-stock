@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Alertes | Lab Stock{% endblock %}
+{% block page_title %}Alertes{% endblock %}
+
+{% block content %}
+<div class="panel mb-3">
+  <div class="panel-header">
+    <h3>Toutes les alertes</h3>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'alerts' %}">⟳ Refresh</a>
+  </div>
+
+  <form method="get" class="row g-2">
+    <div class="col-12 col-md-3">
+      <label class="form-label">nom/reference/code-barres</label>
+      <input
+        type="search"
+        name="q"
+        class="form-control"
+        value="{{ query }}"
+        placeholder="Nom / Reference / Barcode">
+    </div>
+
+    <div class="col-12 col-md-2">
+      <label class="form-label">Famille</label>
+      <select name="famille" class="form-select">
+        <option value="">Toutes les familles</option>
+        {% for f in familles %}
+        <option value="{{ f.id }}" {% if famille_filter == f.id|stringformat:"s" %}selected{% endif %}>{{ f.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12 col-md-2">
+      <label class="form-label">Type d'alerte</label>
+      <select name="kind" class="form-select">
+        <option value="all" {% if kind_filter == "all" %}selected{% endif %}>Tout</option>
+        <option value="stock" {% if kind_filter == "stock" %}selected{% endif %}>Stock</option>
+        <option value="expiry" {% if kind_filter == "expiry" %}selected{% endif %}>Expiration</option>
+      </select>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <label class="form-label">Tri</label>
+      <select name="sort" class="form-select">
+        <option value="" {% if sort_filter == "" %}selected{% endif %}>Sans tri</option>
+        <option value="name" {% if sort_filter == "name" %}selected{% endif %}>Nom</option>
+        <option value="barcode" {% if sort_filter == "barcode" %}selected{% endif %}>Barcode</option>
+        <option value="date" {% if sort_filter == "date" %}selected{% endif %}>Date fin</option>
+        <option value="days" {% if sort_filter == "days" %}selected{% endif %}>Jours restants</option>
+      </select>
+    </div>
+
+    <div class="col-12 col-md-2 d-grid align-items-end">
+      <button class="btn btn-primary" type="submit">Appliquer</button>
+    </div>
+  </form>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h3>🔴 Rupture + expiration</h3></div>
+      <div class="table-responsive" style="max-height: 460px; overflow-y: auto;">
+        <table class="table table-modern align-middle mb-0 alerts-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Type</th>
+              <th>Etat</th>
+              <th>Quantite restante</th>
+              <th>Jours restants</th>
+              <th>Produit</th>
+              <th>Reference</th>
+              <th>Barcode</th>
+              <th>Famille</th>
+              <th>Date entree</th>
+              <th>Date fin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in critical_alerts %}
+            <tr>
+              <td>
+                {% if item.type == "expiry" and item.days_left < 0 %}
+                <form method="post" action="" onsubmit="return confirm('Supprimer ce lot expire ?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_expired_lot">
+                  <input type="hidden" name="lot_id" value="{{ item.lot_id }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                </form>
+                {% elif item.type == "stock" %}
+                <a href="{% url 'lots' %}?product={{ item.produit_id }}" class="btn btn-sm btn-outline-success">Ajouter lot</a>
+                {% else %}
+                <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+              <td>{{ item.type_label }}</td>
+              <td><span class="status-pill danger">{{ item.status_label }}</span></td>
+              <td>
+                {% if item.type == "stock" %}
+                <span class="status-pill danger">{{ item.stock_total }}</span>
+                {% else %}
+                <span class="status-pill danger">{{ item.lot_quantite }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.type == "stock" %}
+                <span class="text-muted">-</span>
+                {% elif item.days_left == "-" %}
+                <span class="text-muted">-</span>
+                {% else %}
+                <span class="status-pill danger">{{ item.days_left }}</span>
+                {% endif %}
+              </td>
+              <td>{{ item.produit_nom|default:"-" }}</td>
+              <td>{{ item.reference }}</td>
+              <td>{{ item.barcode }}</td>
+              <td>{{ item.famille }}</td>
+              <td>{% if item.type == "stock" %}-{% else %}{{ item.date_entree }}{% endif %}</td>
+              <td>{% if item.type == "stock" %}-{% else %}{{ item.date_fin }}{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="11" class="text-center text-muted">Aucun cas critique pour ce filtre.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header"><h3>🟡 Proche rupture + proche expiration</h3></div>
+      <div class="table-responsive" style="max-height: 460px; overflow-y: auto;">
+        <table class="table table-modern align-middle mb-0 alerts-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Etat</th>
+              <th>Quantite restante</th>
+              <th>Jours restants</th>
+              <th>Produit</th>
+              <th>Reference</th>
+              <th>Barcode</th>
+              <th>Famille</th>
+              <th>Date entree</th>
+              <th>Date fin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in warning_alerts %}
+            <tr>
+              <td>{{ item.type_label }}</td>
+              <td><span class="status-pill near">{{ item.status_label }}</span></td>
+              <td>
+                {% if item.type == "stock" %}
+                <span class="status-pill near">{{ item.stock_total }}</span>
+                {% else %}
+                <span class="status-pill near">{{ item.lot_quantite }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if item.type == "stock" %}
+                <span class="text-muted">-</span>
+                {% elif item.days_left == "-" %}
+                <span class="text-muted">-</span>
+                {% else %}
+                <span class="status-pill near">{{ item.days_left }}</span>
+                {% endif %}
+              </td>
+              <td>{{ item.produit_nom|default:"-" }}</td>
+              <td>{{ item.reference }}</td>
+              <td>{{ item.barcode }}</td>
+              <td>{{ item.famille }}</td>
+              <td>{% if item.type == "stock" %}-{% else %}{{ item.date_entree }}{% endif %}</td>
+              <td>{% if item.type == "stock" %}-{% else %}{{ item.date_fin }}{% endif %}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" class="text-center text-muted">Aucun cas proche pour ce filtre.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

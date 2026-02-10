@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Famille | Lab Stock{% endblock %}
+{% block page_title %}Famille{% endblock %}
+
+{% block content %}
+ 
+<div class="panel mt-3">
+  <div class="panel-header"><h3>Gestion des familles</h3></div>
+  <form method="post" class="row g-2 mb-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_famille">
+    <div class="col-12 col-md-6">
+      <label class="form-label">Nouvelle famille</label>
+      {{ form.nom }}
+    </div>
+    <div class="col-12 col-md-2 d-grid align-items-end">
+      <button class="btn btn-outline-primary" type="submit">Ajouter</button>
+    </div>
+    {% if form.errors %}
+    <div class="col-12 text-danger small">{{ form.errors }}</div>
+    {% endif %}
+  </form>
+
+<ul class="list-group">
+
+  {% for fam in familles %}
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+
+    <!-- Left: Famille info -->
+    <div>
+      <strong>{{ fam.nom }}</strong>
+      <span class="text-muted small ms-2">
+        ({{ fam.produits.count }} produits)
+      </span>
+    </div>
+
+    <!-- Right: Actions -->
+    <div class="btn-group btn-group-sm">
+
+      <!-- View products -->
+      <a href="{% url 'products' %}?famille={{ fam.id }}"
+         class="btn btn-outline-secondary">
+        Produits
+      </a>
+
+      <!-- Edit -->
+      <button
+         type="button"
+         class="btn btn-outline-primary"
+         data-bs-toggle="modal"
+         data-bs-target="#editFamilleModal{{ fam.id }}">
+        Modifier
+      </button>
+
+      <!-- Delete -->
+      <button
+        type="button"
+        class="btn btn-outline-danger"
+        data-bs-toggle="modal"
+        data-bs-target="#deleteFamilleModal{{ fam.id }}">
+        Supprimer
+      </button>
+
+    </div>
+
+  </li>
+
+  {% empty %}
+  <li class="list-group-item text-muted text-center">
+    Aucune famille définie.
+  </li>
+  {% endfor %}
+
+</ul>
+
+{% for fam in familles %}
+<div class="modal fade" id="editFamilleModal{{ fam.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="edit_famille">
+        <input type="hidden" name="famille_id" value="{{ fam.id }}">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Modifier la famille "{{ fam.nom }}"</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <label class="form-label">Nouveau nom</label>
+          <input type="text" class="form-control" name="nom" value="{{ fam.nom }}" required maxlength="100">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="deleteFamilleModal{{ fam.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="delete_famille">
+        <input type="hidden" name="famille_id" value="{{ fam.id }}">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Supprimer la famille "{{ fam.nom }}"</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <p class="mb-2">Choisissez le mode de suppression :</p>
+
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="delete_mode" id="familyOnly{{ fam.id }}" value="family_only" checked>
+            <label class="form-check-label" for="familyOnly{{ fam.id }}">
+              Supprimer la famille seulement (par défaut)
+            </label>
+            <div class="text-muted small">Les produits liés seront déplacés vers la famille "-".</div>
+          </div>
+
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="delete_mode" id="withProducts{{ fam.id }}" value="with_products">
+            <label class="form-check-label" for="withProducts{{ fam.id }}">
+              Supprimer la famille + tous les produits liés
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-danger">Confirmer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+</div>
+{% endblock %}
