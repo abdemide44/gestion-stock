@@ -5,7 +5,6 @@ Django settings for config project.
 import os
 import importlib.util
 from pathlib import Path
-from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 HAS_WHITENOISE = importlib.util.find_spec("whitenoise") is not None
@@ -76,19 +75,7 @@ DATABASES = {
     }
 }
 
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    parsed = urlparse(database_url)
-    if parsed.scheme in {"postgres", "postgresql"}:
-        DATABASES["default"] = {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": parsed.path.lstrip("/"),
-            "USER": parsed.username or "",
-            "PASSWORD": parsed.password or "",
-            "HOST": parsed.hostname or "",
-            "PORT": str(parsed.port or "5432"),
-            "CONN_MAX_AGE": 600,
-        }
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
